@@ -23,7 +23,8 @@ class BlockChain(object):
         self.current_transactions = []
         self.nodes = set()
         #Create the genesis block
-        self.new_block(previous_hash=1, proof=100)
+        if not self.chain:
+            self.new_block(previous_hash=1, proof=100)
 
 
     def new_block(self, proof, previous_hash=None):

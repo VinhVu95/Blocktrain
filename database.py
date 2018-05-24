@@ -6,11 +6,18 @@ class MongoDb(object):
         self.client = MongoClient(host, port)
         self.chains = self.client['block_chain'].chains
 
-    def add_new_block(self, block):
-        pass
+    def add_new_block(self, block, host):
+        return self.chains.find_and_modify(
+            query={'host': host},
+            update={"$push": {"chain": block}}
+        )
 
-    def delete_chain(self):
-        pass
+    def delete_chain(self, host):
+        try:
+            self.chains.delete_one({'host': host})
+        except Exception as err:
+            print("Exception when trying to delete one node's blockchain: ", err)
+            raise
 
     def insert_new_chain(self, new_chain, host):
         data = {

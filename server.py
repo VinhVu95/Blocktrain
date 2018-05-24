@@ -9,11 +9,12 @@ from textwrap import dedent
 app = Flask(__name__)
 
 # Generate a globally unique address for this node
-node_identifier = str(uuid4()).replace('-','')
+node_identifier = str(uuid4()).replace('-', '')
 
 # Instantiate the Blockchain
 blockchain = None
 db=MongoDb()
+host=""
 
 
 def _initBlockChain(host):
@@ -43,10 +44,12 @@ def mine():
         amount=1,
     )
 
-    #Forge the new Block by adding it to the chain
+    # Forge the new Block by adding it to the chain
     previous_hash = blockchain.hash(last_block)
     block = blockchain.new_block(proof, previous_hash)
-    db.add_new_block(block)
+
+    # TODO: handle if no chain ever exist for this node
+    db.add_new_block(block, host)
 
     response = {
         'message': "New Block Forged",
@@ -124,7 +127,8 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
     args = parser.parse_args()
     port = args.port
-    _initBlockChain('localhost:'+str(port))
+    host = 'localhost:'+str(port)
+    _initBlockChain(host)
 
     app.run(host='0.0.0.0', port=port)
 
