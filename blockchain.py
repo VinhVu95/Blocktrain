@@ -18,10 +18,10 @@ def is_port_open(ip, port):
 
 
 class BlockChain(object):
-    def __init__(self, chain=[]):
+    def __init__(self, chain=[], nodes=set()):
         self.chain = chain
         self.current_transactions = []
-        self.nodes = set()
+        self.nodes = nodes
         #Create the genesis block
         if not self.chain:
             self.new_block(previous_hash=1, proof=100)

@@ -4,6 +4,7 @@ from blockchain import BlockChain
 from database import MongoDb
 import json
 from textwrap import dedent
+from pprint import pprint
 
 # Instantiate our Node
 app = Flask(__name__)
@@ -12,21 +13,21 @@ app = Flask(__name__)
 node_identifier = str(uuid4()).replace('-', '')
 
 # Instantiate the Blockchain
-blockchain = None
-db=MongoDb()
-host=""
+blockchain = BlockChain()
+db = MongoDb()
+host = ""
 
 
 def _initBlockChain(host):
     global blockchain
     result = db.get_chain_with_host(host)
     if not result:
-        print("First time created!!!")
+        pprint("First time created!!!")
         blockchain = BlockChain()
         db.insert_new_chain(blockchain, host)
     else:
-        print("Full chain information returned from database: {0}".format(result))
-        blockchain = BlockChain(chain=result['chain'])
+        pprint("Full chain information returned from database: {0}".format(result))
+        blockchain = BlockChain(chain=result['chain'], nodes=db.get_nodes_from_network())
 
 
 @app.route('/mine', methods=['Get'])
@@ -85,19 +86,26 @@ def full_chain():
     }
     return jsonify(response), 200
 
+
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
+    # The host receiving the request to register new nodes must be in the network itself
     values = request.get_json()
 
     nodes = values.get('nodes')
     if nodes is None:
         return "Error: Please supply a valid list of nodes", 400
 
+    reg_success = []
     for node in nodes:
-        blockchain.register_node(node)
+        if blockchain.register_node(node):
+            reg_success.append(node)
+            db.register_nodes_to_network([node])
+            # Synchronise nodes in network
+            blockchain.nodes = db.get_nodes_from_network()
 
     response = {
-        'message': 'New nodes have been added',
+        'message': f'New nodes: {reg_success} have been added',
         'total_nodes': list(blockchain.nodes),
     }
     return jsonify(response), 201
@@ -119,6 +127,7 @@ def consensus():
         }
 
     return jsonify(response), 200
+
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

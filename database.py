@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from urllib.parse import urlparse
 
 
 class MongoDb(object):
@@ -12,6 +13,15 @@ class MongoDb(object):
             update={"$push": {"chain": block}}
         )
 
+    def register_nodes_to_network(self, nodes):
+        return self.chains.update_many(
+            {'host': {"$in": [urlparse(n).netloc for n in nodes]}},
+            {"$set": {"in_network": True}}
+        )
+
+    def get_nodes_from_network(self):
+        return set([n['host'] for n in self.chains.find() if n.get("in_network")])
+
     def delete_chain(self, host):
         try:
             self.chains.delete_one({'host': host})
@@ -24,8 +34,10 @@ class MongoDb(object):
             'host': host,
             'chain': new_chain.chain
         }
+
         result = self.chains.insert_one(data)
         print("New chain: {0} added with id {1} and host {2}".format(result, result.inserted_id, host))
+
         if result:
             return "Success"
         else:
