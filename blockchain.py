@@ -165,6 +165,7 @@ class BlockChain(object):
         """
 
         neighbours = self.nodes
+        print('List of neighbours: ' + str(neighbours))
         new_chain = None
 
         # We are looking for chain longer than ours

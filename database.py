@@ -43,6 +43,7 @@ class MongoDb(object):
         else:
             return "Insert failed"
 
+    # To debug
     def get_full_chains(self):
         for chain in self.chains.find():
             yield chain

@@ -120,6 +120,8 @@ def consensus():
             'message': 'Our chain was replaced',
             'new_chain': blockchain.chain
         }
+        db.delete_chain(host)
+        db.insert_new_chain(blockchain, host)
     else:
         response = {
             'message': 'Our chain is authoritative',
@@ -139,7 +141,7 @@ if __name__ == '__main__':
     host = 'localhost:'+str(port)
     _initBlockChain(host)
 
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, threaded=True)
 
 
 
