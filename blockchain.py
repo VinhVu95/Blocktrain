@@ -18,6 +18,8 @@ def is_port_open(ip, port):
 
 
 class BlockChain(object):
+    UTXOs = dict()
+
     def __init__(self, chain=[], nodes=set()):
         self.chain = chain
         self.current_transactions = []

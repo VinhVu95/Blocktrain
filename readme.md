@@ -4,4 +4,4 @@ Some basic blockchain Rest API implementation. The service allows:
  *  perform mining (Proof-Of-Work), adding new transaction to the chain
  *  synchronisation between nodes with Consensus algorithm
 
- TODO: Allow creating secure transactions between user within blockchain network
+TODO: Allow creating secure transactions between user within blockchain network using Elliptic-curve cryptography
