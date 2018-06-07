@@ -11,8 +11,8 @@ def concatenate_strings(*objs):
 
 class Wallet(object):
     def __init__(self):
-        self.private_key, self.publ
-        ic_key = Wallet.generate_keypairs()
+        self.private_key, self.public_key = Wallet.generate_keypairs()
+        self.utxos = dict()
 
     @staticmethod
     def generate_keypairs():
@@ -23,6 +23,41 @@ class Wallet(object):
         except ecdsa.EcdsaError as encode_err:
             print("Error when generating key pairs: {0}".format(encode_err))
             raise
+
+    def get_balance(self):
+        """
+        :return: balance and stores the UTXO's owned by this wallet in self.utxos
+        """
+        total = 0.0
+        for id, utxo in BlockChain.UTXOs.items():
+            if utxo.is_mine(self.public_key):
+                self.utxos[id] = utxo
+                total += utxo.value
+        return total
+
+    def send_funds(self, _recipient, value):
+        """
+        :param _recipient: public key
+        :param value: value to transfer
+        :return: new transaction generated from this wallet
+        """
+        if self.getBalance() < value:
+            print("#Not enough funds to send transaction. Transaction discarded.")
+            return None
+        inputs = list()
+        total = 0.0
+        for id, utxo in self.utxos.items():
+            total += utxo.value
+            inputs.append(TransactionInput(id))
+            if total > value:
+                break
+        new_transaction = Transaction(self.public_key, _recipient, value, inputs)
+        new_transaction.generate_signature(self.private_key)
+
+        for i in inputs:
+            self.utxos.pop(i.tx_output_id)
+
+        return new_transaction
 
 
 class Transaction(object):
@@ -41,6 +76,7 @@ class Transaction(object):
         self.signature = None
         self.tx_inputs = list()
         self.tx_outputs = list()
+        self.tx_id = None
 
     def calculate_hash(self):
         """
@@ -76,10 +112,10 @@ class Transaction(object):
 
         # Genrerate transaction outputs
         left_over = self.get_inputs_value() - self.values
-        tx_id = self.calculate_hash()
+        self.tx_id = self.calculate_hash()
         self.tx_outputs.extend(
-            [TransactionOutput(self.recipient, self.values, tx_id),
-             TransactionOutput(self.sender, left_over, tx_id)]
+            [TransactionOutput(self.recipient, self.values, self.tx_id),
+             TransactionOutput(self.sender, left_over, self.tx_id)]
         )
 
         # Add output to Unspent lists
@@ -100,6 +136,7 @@ class Transaction(object):
 
     def get_output_value(self):
         return float(sum([o.value for o in self.tx_outputs]))
+
 
 class TransactionInput(object):
     def __init__(self, tx_output_id):
