@@ -4,6 +4,7 @@ import socket
 from time import time
 from urllib.parse import urlparse
 import requests
+from wallet import Transaction
 
 
 def is_port_open(ip, port):
@@ -61,13 +62,20 @@ class BlockChain(object):
         :return: <int> The index of the Block that will hold this transaction
         """
 
+        new_transaction = Transaction(sender, recipient, amount)
+
+        if self.last_block['previous_hash'] != "0":
+            if not new_transaction.process_transaction():
+                print('Transaction failed to process. Discarded')
+                return None, False
+
         self.current_transactions.append({
             'sender': sender,
             'recipient': recipient,
             'amount': amount,
         })
 
-        return self.last_block['index'] + 1
+        return self.last_block['index'] + 1, True
 
     @staticmethod
     def hash(block):
