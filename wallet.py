@@ -41,7 +41,7 @@ class Wallet(object):
         :param value: value to transfer
         :return: new transaction generated from this wallet
         """
-        if self.getBalance() < value:
+        if self.get_balance() < value:
             print("#Not enough funds to send transaction. Transaction discarded.")
             return None
         inputs = list()
@@ -63,7 +63,7 @@ class Wallet(object):
 class Transaction(object):
     SEQUENCE = 0 # Roughly count how many transactions have been generated, should be a global value saved in database
 
-    def __init__(self, sender, recipient, values):
+    def __init__(self, sender, recipient, values, inputs=[]):
         """
 
         :param sender: this should be public key of sender
@@ -74,7 +74,7 @@ class Transaction(object):
         self.recipient = recipient
         self.values = float(values)
         self.signature = None
-        self.tx_inputs = list()
+        self.tx_inputs = inputs
         self.tx_outputs = list()
         self.tx_id = None
 
@@ -166,5 +166,28 @@ if __name__ == '__main__':
     test_transaction = Transaction(walletA.public_key, walletB.public_key, 5)
     test_transaction.generate_signature(walletA.private_key)
     print('Is signature verified?: ' + str(test_transaction.verify_signature()))
+
+    # Create Wallet
+    walletA = Wallet()
+    walletB = Wallet()
+    coinbase = Wallet()
+
+    # Create genesis transactions, which send 100 VinhCoins to walletA
+    genesis_tx = Transaction(coinbase.public_key, walletA.public_key, 100.0)
+    genesis_tx.generate_signature(coinbase.private_key)  # Manually sign genesis transaction
+    genesis_tx.tx_id = "0"
+    genesis_tx.tx_outputs.append(TransactionOutput(genesis_tx.recipient, genesis_tx.values, genesis_tx.tx_id))
+    # store first transaction into UTXOs list
+    BlockChain.UTXOs.update({
+        genesis_tx.tx_outputs[0].id: genesis_tx.tx_outputs[0]
+    })
+
+    print('Creating and mining genesis block')
+    bc = BlockChain(genesis_tx)
+
+    # testing
+    print("\n Wallet A balance is: " + str(walletA.get_balance()))
+    print("\n Wallet A is tempting to send fund (40) to Wallet B...")
+    bc.new_transaction(walletA.send_funds(walletB.public_key, 40.0))
 
 

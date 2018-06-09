@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from uuid import uuid4
 from blockchain import BlockChain
+from wallet import Transaction
 from database import MongoDb
 import json
 from textwrap import dedent
@@ -39,11 +40,11 @@ def mine():
 
     # We must receive a reward for finding the proof.
     # The sender is "0" to signify that this node has mined a new coin.
-    blockchain.new_transaction(
+    blockchain.new_transaction(Transaction(
         sender="0",
         recipient=node_identifier,
-        amount=1,
-    )
+        value=1,
+    ))
 
     # Forge the new Block by adding it to the chain
     previous_hash = blockchain.hash(last_block)
@@ -73,7 +74,7 @@ def new_transaction():
         return 'Missing values', 400
 
     # Create a new Transaction
-    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
+    index = blockchain.new_transaction(Transaction(values['sender'], values['recipient'], values['amount']))
     response = {'message': f'Transaction will be added to Block {index}'}
     return jsonify(response), 201
 

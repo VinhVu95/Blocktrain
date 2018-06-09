@@ -4,7 +4,7 @@ import socket
 from time import time
 from urllib.parse import urlparse
 import requests
-from wallet import Transaction
+from bchelper import get_merkle_root
 
 
 def is_port_open(ip, port):
@@ -21,14 +21,15 @@ def is_port_open(ip, port):
 class BlockChain(object):
     UTXOs = dict()
 
-    def __init__(self, chain=[], nodes=set()):
+    def __init__(self, chain=[], genesis_tx=None, nodes=set()):
         self.chain = chain
-        self.current_transactions = []
+
+        self.current_transactions = [self.new_transaction(genesis_tx)] if genesis_tx else []
+
         self.nodes = nodes
         #Create the genesis block
         if not self.chain:
             self.new_block(previous_hash=1, proof=100)
-
 
     def new_block(self, proof, previous_hash=None):
         """
@@ -43,6 +44,7 @@ class BlockChain(object):
             'timestamp': time(),
             'transactions': self.current_transactions,
             'proof': proof,
+            'merkle_root': get_merkle_root(self.current_transactions),
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
         }
 
@@ -52,17 +54,12 @@ class BlockChain(object):
         self.chain.append(block)
         return block
 
-
-    def new_transaction(self, sender, recipient, amount):
+    def new_transaction(self, new_transaction):
         """
         Creates a new transaction to go into the next mined Block
-        :param sender: <str> Address of the Sender
-        :param recipient: <str> Address of the Recipient
-        :param amount: <int> Amount
+        :param new_transaction: <Transaction> new transaction added to the list of current transactions
         :return: <int> The index of the Block that will hold this transaction
         """
-
-        new_transaction = Transaction(sender, recipient, amount)
 
         if self.last_block['previous_hash'] != "0":
             if not new_transaction.process_transaction():
@@ -70,9 +67,9 @@ class BlockChain(object):
                 return None, False
 
         self.current_transactions.append({
-            'sender': sender,
-            'recipient': recipient,
-            'amount': amount,
+            'sender': new_transaction.sender,
+            'recipient': new_transaction.recipient,
+            'amount': new_transaction.amount,
         })
 
         return self.last_block['index'] + 1, True
@@ -137,7 +134,6 @@ class BlockChain(object):
         else:
             return False
 
-
     def valid_chain(self, chain):
         """
         Determine if a given blockchain is valid
@@ -200,5 +196,8 @@ class BlockChain(object):
             return True
 
         return False
+
+
+
 
 
