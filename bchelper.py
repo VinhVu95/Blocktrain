@@ -3,7 +3,7 @@ import hashlib
 
 def get_merkle_root(transactions):
     count = len(transactions)
-    previous_tree_layer = [tx.tx_id for tx in transactions]
+    previous_tree_layer = [tx['id'] for tx in transactions]
     tree_layer = previous_tree_layer
     while count > 1:
         tree_layer = list()

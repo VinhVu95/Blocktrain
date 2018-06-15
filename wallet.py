@@ -183,11 +183,19 @@ if __name__ == '__main__':
     })
 
     print('Creating and mining genesis block')
-    bc = BlockChain(genesis_tx)
+    bc = BlockChain(genesis_tx=genesis_tx)
 
     # testing
     print("\n Wallet A balance is: " + str(walletA.get_balance()))
     print("\n Wallet A is tempting to send fund (40) to Wallet B...")
     bc.new_transaction(walletA.send_funds(walletB.public_key, 40.0))
+    print("\n Wallet A balance is: " + str(walletA.get_balance()))
+    print("\n Wallet B balance is: " + str(walletB.get_balance()))
+
+    bc.new_block(bc.proof_of_work(bc.last_block['proof']))
+    print("\nWalletA Attempting to send more funds (1000) than it has...")
+    bc.new_transaction(walletA.send_funds(walletB.public_key, 1000.0))
+    print("\n Wallet A balance is: " + str(walletA.get_balance()))
+    print("\n Wallet B balance is: " + str(walletB.get_balance()))
 
 

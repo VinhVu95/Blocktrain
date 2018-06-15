@@ -24,11 +24,12 @@ class BlockChain(object):
     def __init__(self, chain=[], genesis_tx=None, nodes=set()):
         self.chain = chain
 
-        self.current_transactions = [self.new_transaction(genesis_tx)] if genesis_tx else []
+        self.current_transactions = []
 
         self.nodes = nodes
         #Create the genesis block
         if not self.chain:
+            self.new_transaction(genesis_tx)
             self.new_block(previous_hash=1, proof=100)
 
     def new_block(self, proof, previous_hash=None):
@@ -61,16 +62,23 @@ class BlockChain(object):
         :return: <int> The index of the Block that will hold this transaction
         """
 
-        if self.last_block['previous_hash'] != "0":
-            if not new_transaction.process_transaction():
-                print('Transaction failed to process. Discarded')
-                return None, False
-
-        self.current_transactions.append({
+        txn = {
+            'id': new_transaction.tx_id,
             'sender': new_transaction.sender,
             'recipient': new_transaction.recipient,
-            'amount': new_transaction.amount,
-        })
+            'amount': new_transaction.values,
+        }
+
+        # If genesis block, then no previous block
+        if not self.last_block:
+            self.current_transactions.append(txn)
+            return 0, True
+
+        if not new_transaction.process_transaction():
+            print('Transaction failed to process. Discarded')
+            return None, False
+
+        self.current_transactions.append(txn)
 
         return self.last_block['index'] + 1, True
 
@@ -88,7 +96,7 @@ class BlockChain(object):
 
     @property
     def last_block(self):
-        return self.chain[-1]
+        return self.chain[-1] if len(self.chain) > 0 else None
 
     def proof_of_work(self, last_proof):
         """
